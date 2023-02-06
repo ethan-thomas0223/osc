@@ -32,7 +32,7 @@ use std::fs::File;
 use std::io::BufReader; 
 use std::io; 
 
-fn read_lines<>(numLines: i32, filepath: &str) -> std::io::Result<()> {
+fn read_lines<>(numLines: i32, filepath: &str) {//-> std::io::Result<()> {
     let f = File::open(filepath)?;
     let f = BufReader::new(f);
     let mut i = 0; 
@@ -46,7 +46,7 @@ fn read_lines<>(numLines: i32, filepath: &str) -> std::io::Result<()> {
         i += 1;
     }
 
-    Ok(())
+    //Ok(())
 }
 
 
