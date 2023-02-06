@@ -6,17 +6,18 @@ use std::fs;
 
 fn main() {
     let mut counter: i32 = 0;
-    let mut target: &str = "";
+    let mut target: &str = " ";
     for arg in std::env::args().skip(1){
         counter += 1;
         if counter == 1{
             if arg.contains("-"){
-                let target: &str = &arg[1..];
-                println!("{target}");
+                let target = &arg;
+                //println!("{target}");
             }
-        }else {
-            println!("Hi!");
-            //println!("{arg}");
+        }
+        else {
+            //println!("Hi!");
+            //println!("{target}");
             read_lines(target, &arg).unwrap(); 
         }
     }
@@ -29,11 +30,12 @@ use std::io::BufReader;
 use std::io; 
 
 fn read_lines<>(target: &str, filepath: &str) -> std::io::Result<()> {
+    println!("{target}");
+    println!("{filepath}");
     let f = File::open(filepath)?;
     let f = BufReader::new(f);
     for line in f.lines() {
-        //println!("here");
-
+        
         match line {
             Ok(line) => if line.contains(target) {println!("{}", line) },   
             Err(e) => println!{"errorno: {e}"} 
