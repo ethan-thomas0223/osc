@@ -6,19 +6,19 @@ use std::fs;
 
 fn main() {
     let mut counter: i32 = 0;
-    let mut target: &str = " ";
+    let mut target: String = " ".to_string();
     for arg in std::env::args().skip(1){
         counter += 1;
         if counter == 1{
             if arg.contains("-"){
-                let target = &arg;
+                target = arg[1..].to_string();
                 //println!("{target}");
             }
         }
         else {
             //println!("Hi!");
             //println!("{target}");
-            read_lines(target, &arg).unwrap(); 
+            read_lines(target.as_str(), &arg).unwrap(); 
         }
     }
 
