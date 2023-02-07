@@ -1,10 +1,14 @@
 //make a very simple shell
 
 use std::ffi::CString;
-
+use std::env;
+use std::io; 
 use nix::{sys::wait::waitpid,unistd::{fork, ForkResult, execvp}};
 
 fn main() {
+    let path = env::current_dir();
+    println!("The current directory is {}", path.expect("REASON").display());
+    //Ok(())
     match unsafe{fork()} {
         Ok(ForkResult::Parent { child, .. }) => {
             println!("Continuing execution in parent process, new child has pid: {}", child);
@@ -18,7 +22,6 @@ fn main() {
                 Ok(_) => {println!("Child finished");},
                 Err(e) => {println!("Could not execute: {e}");},
             }
-            
         }
         Err(_) => println!("Fork failed"),
      }
