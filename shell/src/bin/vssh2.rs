@@ -8,7 +8,7 @@ use nix::{sys::wait::waitpid,unistd::{fork, ForkResult, execvp}};
 fn main() -> anyhow::Result<()> {
     let path = env::current_dir();
     println!("The current directory is {}", path.expect("REASON").display());
-    let mut args: Vec<CString> = std::env::args().skip(1).split("|").collect();  
+    let mut args: Vec<String> = std::env::args().skip(1).split("|").collect();  
 
     if len(args) > 1{
         //meaning there would at least 2 args, therefore a pipe -> run the pipeline
@@ -22,7 +22,7 @@ fn main() -> anyhow::Result<()> {
                 Err(e) => {println!("Could not execute: {e}");},
             }
     }
-     
+    Ok(())
 }
 
 
