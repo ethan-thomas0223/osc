@@ -5,22 +5,8 @@ struct CmdChecker {
     cmd: String,
 }
 impl Type{
-    //check if pipe, return bool
-    fn checkPipe(&self) -> bool { 
-        let mut ispipe = false;
-        for arg in self.cmd{
-            if arg == "|" {
-                ispipe = true;
-            }else{
-                ispipe = false;
-            }
-        }
-        if ispipe == true {
-            return 
-        }else{
-            return 
-        }
-    }
+    //already check if pipe, 
+    
     //check for outfile, remove from args, and return filename as str
     fn checkOut(&self) -> String {
         for arg in self.cmd{
