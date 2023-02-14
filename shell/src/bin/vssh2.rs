@@ -14,13 +14,23 @@ fn main() -> anyhow::Result<()> {
     
     //essentially just working on the pipeline enhancement here 
     let mut args: Vec<String> = std::env::args().skip(1).split("|").collect();  
-    
+    let mut isbg = CmdChecker.checkBG(args);
+    let mut file_out = CmdChecker.checkOut(args);
+    let mut file_in = CmdChecker.checkIn(args);
     if len(args) > 1{
         //meaning there would at least 2 args, therefore a pipe -> run the pipeline
         match unsafe {fork()}? {
             nix::unistd::ForkResult::Parent { child: _ } => {
-                println!("Continuing execution in parent process, new child has pid: {}", child);
-                waitpid(child, None).unwrap();
+                println!("Continuing execution in parent process, new child has pid: {}", child);  
+                //checking to see if bg program, 
+                //seems like this isn't the right spot though and is bug inducing
+                if isbg == false {
+                    //wait on child if not true
+                    waitpid(child, None).unwrap();
+                }else{
+                    //if true remove ampersand and don't wait on child
+                    args[0].remove(len(args[0]-1));
+                }
                 println!("Returned to parent - child is finished.");
             }
             nix::unistd::ForkResult::Child => {
