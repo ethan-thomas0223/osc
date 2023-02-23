@@ -1,0 +1,9 @@
+prefix=/mnt/c/Users/ethan/Drix/Comp Sci/Operating Systems/hw/osc/shell/target/debug/build/openssl-sys-71212b9317b0bd6e/out/openssl-build/install
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: OpenSSL
+Description: Secure Sockets Layer and cryptography libraries and tools
+Version: 1.1.1t
+Requires: libssl libcrypto
