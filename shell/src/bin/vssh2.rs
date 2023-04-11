@@ -91,7 +91,7 @@ fn pipeline(args: Vec<String>) -> anyhow::Result<()>{
         curarg -= 1;
         
     }
-    let nargs = externalize(args[0]);
+    let nargs = externalize(args[0].to_str());
     dup2(fd, 1);
     execvp(&nargs[0], &nargs);
     

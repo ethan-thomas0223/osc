@@ -1,0 +1,154 @@
+/* storage Hard Drive v. Flash RAM
+    Servers                 USB 
+    Desktops                Laptops, phones, tablets
+    Cost per Byte low       Cost per Byte High
+
+   Hard Drive
+   - spinning disk divided into concentric circles
+   - Each circle called a track
+   - each track is divided into blocks (sectors)
+   - Each block is a fixed size
+        - About 4 kilobytes (kb)
+   - To read/write to a block 
+        - Read-Write head (RWH)
+        - Similar to the needle on a record player
+        - Within a block there are tiny magnets, each correspoondes to a bit of info
+        - info based on orientation
+        - RWH needs to sense orientation and realign magnets to store new info
+   - Instruct 
+        - RWH to go to a track/block
+   - HD Driver
+        - Driver Software  (ROM)
+            -  Read Only Memory
+            - standard software to talk to the RWH
+            - OS will work with the following primitives
+                - Read Block 
+                - Write Block
+   - Head Crash
+        - When the RWH hits the disk at extremely high speed
+        - All data lost
+        - Occurs after years of use and a extreme amount of Read/Writes
+   -  Flash RAM
+        - Traps Electrons in silicon
+        - Is able to maintain storage through this phenomenon
+        - Over time the silicon can degrade causing the electrons to leak and lose content
+        - Happens after years
+    - Uses Same Driver Software
+        - Blocks have a limited amount of Read/Writes before blocks begin to degrade
+        - Software can alternate which blocks are in use
+        - Same primitives
+            - Read Block
+            - Write Block
+     - File System Example
+        - Desktop 
+            - ENGL220
+               - paper1.docx
+        - /Users/ethan/Desktop/Documents/ENGL220/paper1.docx
+        - The notion of / being a root directory
+        - Where everything begins "Superblock"
+            - Block 0 on the disk
+            - Contain info to let OS know whats going on on the disk
+            - Can tell the OS where "/" is on the disk 
+               - Contains a pointer to the root directory
+               - # files stored
+               - Contains a "signature" 
+                    - No one file system - tells what type file system being used
+     - Where is the root directory 
+        - what is a folder and what is a file?
+        - a direcrtory is a type of file
+        - Files do not need to be saved to consecutive blocks at all 
+     - File system is no more than a data sturcture
+        - Tree/Graph?
+        - INode
+               - Index Node
+               - Total Bytes stored in file
+                    - Basically so you know where to stop reading blocks
+               - What blocks is it occupying
+                    - Fixed size array containing the nth block the file is on
+               - Pointer to another INode if file too big 
+               - resident disk data sturcture
+                    - May have to tell the RWH to go to another INode, Takes time
+        - Block 0 Superblock
+        - Couple blocks for occupancy
+               - INodes in use (Max Num of INodes)
+               - Num Data Blocks
+        - Several Blocks for INode Table 
+               - Array of INodes 
+        - Data Blocks contains the rest of the Disk 
+               - Filename and INode number is all thats on Disk??
+
+
+File Systems
+     - Read(block)
+     - Write(block)
+     - have to turn these into C:\Users\username\file\file\file.exe
+          - C:\
+          - the \ is a predefinied file at INode #0 
+          - Go to Superblock, then points to INode table, finds INode 0 (All Inodes Fixed Size)
+          - Inode 0 will have the data blocks listed that contain the info in the file
+          - OS will load the blocks listed in INode 0 into RAM 
+               - OS will need to need to have some Standing Buffer space for operations
+          - This directory will contain filenames and the corresponding INode# 
+               - adds up to 64 Bytes between the filename and Inode #
+               - need a terminating character usually '\0'
+          - For each entry in RAM (64 bytes at a time)
+               - Does our filename match     
+               - if it does, grab INode #
+                    - Gotta go back to the disk 
+                    - Ask disk for INode table entry 
+                    - repeat this process until we reach final file in path     
+                         - in this case file.exe 
+                         - Kernel has intrinsic File Table (Fixed Size Array) 
+                              - A File Table Entry includes 
+                                   - Inode #
+                                   - Inode 
+                                   - Current block being read
+                                   - offset into block being read (i.e. where in block we are)
+                              - creates file descriptor for the file 
+                         - Read 1st block into buffer 
+                         - Read system call 
+                              - copy buffer.len() bytes from OS buffer to User Buffer 
+                              - IF we exhaust a block, 
+                                   - Update current block
+                                        - Increment current block
+                                        - Reset offset to 0
+                                        - load new block into RAM 
+                                             - overwrite the file descriptor with the new contents
+                              - track the total number of bytes read 
+                         - close the file, by nuking the filetable entry 
+                              - on a write need to be more carefule, there's extra stuff
+                                   - have to write the new INnode and INode info 
+               - if it doesn't find a file OS returns an error message
+                    - OS never crashes or Panics, just returns an error message 
+
+Garbage Collectors
+     - Mark/Sweep
+          - Mark
+               - Out of Memory?
+               - For every live variable in program
+                    - mark the heap block at which it points
+                    - Recusursively track internal references 
+          - Sweep
+               - Traverse all blocks
+               - free all unmarked blocks
+     - Copying 
+          - break heap into 2 regions 
+               - can be broken down further but for simplicity sticking with 2
+          - only allocate from one region
+          - Allocation 
+               - store and update start pointer
+          - For every live variable 
+               - Recusursively copy the block to second part of heap
+               - Wipes first part clean
+          - gets rid of heap fragmentation by consecutive storage
+          - also eliminates sweep phase only concerend with blocks with live pointers
+          - copying very block is very expensive
+     - Generational 
+          - Start with copying Collector 
+          - When copy, heirarchical copy levels, 
+               - If copied several times, moved to mark/sweep destination space 
+          - objects are either short lived or live for most of the program 
+     
+
+*/
+
