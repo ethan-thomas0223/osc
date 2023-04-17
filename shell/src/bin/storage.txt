@@ -150,5 +150,23 @@ Garbage Collectors
           - objects are either short lived or live for most of the program 
      
 
+
+------Priority and Processes ------------
+- Priority dictated by use of a Multi-level queue
+     - Queue of Arrays, 0-x where 0 is highest Priority array 
+
+- Priority Assignment 
+     - Multi - Level Feedback Queue
+          - used in every major operating system except linux 
+          - There does exist a unix command called "nice" 
+               - Says this process is a heavy cpu user and sets low priority to a process
+          1. All new processes have priority 0
+               - many, if not nost, new processes complete quickly 
+          2. if a process blocks before using up it's time slice, gets to keep its priority
+               - Add up all total time usage, when at total cap drop priority
+          3. if a process consumes its time slice, it goes down 1 level in priority 
+          4. Every once in a while send all processes to level 0
+     - 
+
 */
 

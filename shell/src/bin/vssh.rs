@@ -6,7 +6,7 @@ use std::path::Path;
 use std::env;
 use std::io; 
 use nix::{sys::wait::waitpid,unistd::{fork, ForkResult, execvp}};
-
+use anyhow::Result;
 
 
 
@@ -30,20 +30,26 @@ fn main() {
 
 
 
-fn handle_client() -> anyhow::Result<()> {
+fn handle_client() -> anyhow::Result<bool> {
     let mut cmd = String::new();
-    print!("$ ");
+    //let path = env::current_dir();
+    print!("-$- ");
     //reset stdout after evey execution of cmd, std gets reset with new input
     std::io::stdout().flush()?;
     std::io::stdin().read_line(&mut cmd)?;
     //finds keyword to kill program other than ctrl c 
     if cmd.trim() == "exit" || cmd.trim() == "quit"{
+        print!("exiting program \n");
         Ok(false)
     } else {
         let commands: Vec<&str> = cmd.split_whitespace().collect();
-        println!("You entered the follwoing command: {commands:?}");
+        //println!("You entered the follwoing command: {commands:?}");
         if commands[0].contains("cd") {
-            let current_dir = Path::new("/");
+            //makes new path and sets that path to current dir, prints it out
+            let mut path = Path::new(commands[1]);
+            env::set_current_dir(path);
+            let path = env::current_dir();
+            println!("The current directory is {}", path.expect("REASON").display());
         }else {
             match unsafe{fork()}? {
                 ForkResult::Parent { child } => {

@@ -1,110 +1,146 @@
-//make an enhanced shell
+//create an enhanced shell
 
 use std::ffi::CString;
+//use std::intrinsics::rotate_right;
+use std::io::Write;
+use std::path::Path;
 use std::env;
 use std::io; 
+//use anyhow::Ok;
 use nix::{sys::wait::waitpid,unistd::{fork, ForkResult, execvp}};
-use check::*;
+use anyhow::Result;
+//use check::*;
+use nix::unistd::dup2;
+use nix::unistd::close;
+use nix::unistd::pipe;
+
+//& at the end means run in BG, ie don't want for child to finish
+// | means output of right goes into left
+// > means filename follows and result goes into that filename (last arg), create file if none
+// < means input should be taken from the filename (1st arg), if 404 abort 
 
 
+fn main() {
 
-fn main() -> anyhow::Result<()> {
-    let path = env::current_dir();
-    println!("The current directory is {}", path.expect("REASON").display());
-    
-    //essentially just working on the pipeline enhancement here 
-    let mut args: Vec<String> = std::env::args().skip(1).split("|").collect();  
-    let mut isbg = CmdChecker.checkBG(args);
-    let mut file_out = CmdChecker.checkOut(args);
-    let mut file_in = CmdChecker.checkIn(args);
-    if len(args) > 1{
-        //meaning there would at least 2 args, therefore a pipe -> run the pipeline
-        match unsafe {fork()}? {
-            nix::unistd::ForkResult::Parent { child: _ } => {
-                println!("Continuing execution in parent process, new child has pid: {}", child);  
-                //checking to see if bg program, 
-                //seems like this isn't the right spot though and is bug inducing
-                if isbg == false {
-                    //wait on child if not true
-                    waitpid(child, None).unwrap();
-                }else{
-                    //if true remove ampersand and don't wait on child
-                    args[0].remove(len(args[0]-1));
+    loop {
+        match handle_client() {
+            Ok(all_good) => {
+                if !all_good {
+                    break;
                 }
-                println!("Returned to parent - child is finished.");
             }
-            nix::unistd::ForkResult::Child => {
-                pipeline(args);
+            Err(e) => {
+                println!("Error: {e}");
             }
         }
-    }else{
-        //there's no pipe, so execute command as is 
-        let cmd = externalize("{args[0]}");
-            println!("{cmd:?}");
-            match execvp::<CString>(cmd[0].as_c_str(), &cmd) {
-                Ok(_) => {println!("Child finished");},
-                Err(e) => {println!("Could not execute: {e}");},
-            }
     }
-    Ok(())
 }
 
 
-fn pipeline(args: Vec<String>) -> anyhow::Result<()>{
-    //last command runs 1st, 1st command runs last?
-    let mut curarg = len(args) - 1;
-    let mut fd = 1; 
-    for arg in args.rev() {
-        if curarg > 1 {
-          
-            let mut rhs: Vec<CString> = vec![arg.split_whitespace().as_c_str()?]; 
 
-            match unsafe {fork()}? {
-                nix::unistd::ForkResult::Parent { child } => {
-                    println!("wc pid is {child}");
-                    waitpid(child, None).unwrap();
-                    println!("Finished!");
-                },
-                nix::unistd::ForkResult::Child => {
-                    let (rhs_in, lhs_out) = pipe()?;
-                    match unsafe {fork()}? {
-                        nix::unistd::ForkResult::Parent { child: _ } => {
-                            close(lhs_out)?;
-                            let flags: OFlag = [OFlag::O_CREAT, OFlag::O_WRONLY, OFlag::O_TRUNC].iter().copied().collect();
-                            let mode: Mode = [Mode::S_IRUSR, Mode::S_IWUSR].iter().copied().collect();
-                            //let file_out = open("wc.out", flags, mode)?;
-                            //dup2(file_out, 1)?;
-                            dup2(fd, 1)?;
-                            dup2(lhs_out, 0)?;
-                            execvp(&rhs[0], &rhs)?;
+
+fn handle_client() -> anyhow::Result<bool> {
+    let mut cmd = String::new();
+    //let path = env::current_dir();
+    print!("-$- ");
+    //reset stdout after evey execution of cmd, std gets reset with new input
+    std::io::stdout().flush()?;
+    std::io::stdin().read_line(&mut cmd)?;
+    //finds keyword to kill program other than ctrl c 
+    if cmd.trim() == "exit" || cmd.trim() == "quit"{
+        print!("exiting program \n");
+        Ok(false)
+    } else {
+        //can produce bugs/errors with the cd command if filepath contains spaces
+        //works if just type filepath without any spaces in it
+        let commands: Vec<&str> = cmd.split_whitespace().collect();
+        //println!("You entered the follwoing command: {commands:?}");
+        if commands[0].contains("cd") {
+            //makes new path and sets that path to current dir, prints it out
+            let mut path = Path::new(commands[1]);
+            env::set_current_dir(path).unwrap();
+            let path = env::current_dir();
+            println!("The current directory is {}", path.expect("REASON").display());
+        }else {
+            match unsafe{fork()}? {
+                ForkResult::Parent { child } => {
+                    println!("Continuing execution in parent process, new child has pid: {}", child);
+                    //if no ampersand sign, runs normally, otherwise don't wait for child completion
+                    if !commands.contains(&"&") {
+                        waitpid(child, None).unwrap();
+                    }
+                    println!("Returned to parent - child is finished.");
+                }
+
+                ForkResult::Child => {
+                    if commands.contains(&"|"){
+                        //print!("here \n");
+                        let mut piped: Vec<&str> = cmd.split("|").collect();
+                        let mut counter = 0;
+                        for arg in &piped{
+                            if counter < piped.len() - 1{
+                                println!("here \n");
+                                //idk whay this either doesn't run or doesn't return anything
+                                //either ask hop or meet with ferrer
+                                
+                                pipline(piped[counter + 1], piped[counter]).unwrap();
+                               
+                                
+                            };
+                            counter += 1; 
                         }
-                        nix::unistd::ForkResult::Child => {
-                            close(rhs_in)?;
-                            fd = rhs_in; 
-                            //dup2(lhs_out, 1)?;
-                            //execvp(&lhs[0], &lhs)?;
+                        counter = 0;
+                        //pipline(right_arg, left_arg)
+                    }else{
+                        let cmd2 = externalize(cmd.as_str());
+                        match execvp(cmd2[0].as_c_str(), &cmd2) {
+                            Ok(_) => {println!("Child finished");},
+                            Err(e) => {println!("Error: {e}");},
                         }
                     }
+                    
                 }
             }
         }
-        curarg -= 1;
-        
+        Ok(true)
     }
-    let nargs = externalize(args[0].to_str());
-    dup2(fd, 1);
-    execvp(&nargs[0], &nargs);
-    
-    Ok(())
+
+}
+
+fn pipline(right_arg: &str, left_arg: &str) -> anyhow::Result<bool>  {
+    //println!("Execute ls -l | wc");
+
+    //let ls: Vec<CString> = vec![CString::new("ls")?, CString::new("-l")?];
+    //let wc: Vec<CString> = vec![CString::new("wc")?];
+    let ls = externalize(left_arg);
+    let wc = externalize(right_arg);
+    match unsafe {fork()}? {
+        nix::unistd::ForkResult::Parent { child } => {
+            println!("wc pid is {child}");
+            waitpid(child, None).unwrap();
+            println!("Finished!");
+        },
+        nix::unistd::ForkResult::Child => {
+            let (wc_in, ls_out) = pipe()?;
+            match unsafe {fork()}? {
+                nix::unistd::ForkResult::Parent { child: _ } => {
+                    close(ls_out)?;
+                    dup2(wc_in, 0)?;
+                    execvp(&wc[0], &wc)?;
+                }
+                nix::unistd::ForkResult::Child => {
+                    close(wc_in)?;
+                    dup2(ls_out, 1)?;
+                    execvp(&ls[0], &ls)?;
+                }
+            }
+        }
+    }
+    Ok(true)
 }
 
 fn externalize(command: &str) -> Vec<CString> {
     command.split_whitespace()
-        .map(|s| CString::new(s).unwrap())
-        .collect()
+    .map(|s| CString::new(s).unwrap()).collect()
+
 }
-
-
-
-
-
