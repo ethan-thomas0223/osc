@@ -46,7 +46,9 @@ fn handle_client() -> anyhow::Result<bool> {
         //println!("You entered the follwoing command: {commands:?}");
         if commands[0].contains("cd") {
             //makes new path and sets that path to current dir, prints it out
-            let mut path = Path::new(commands[1]);
+            //bugs related to white space in filepath
+            let mut filepath: Vec<&str> = cmd.split("cd").collect();
+            let mut path = Path::new(filepath[1].trim());
             env::set_current_dir(path);
             let path = env::current_dir();
             println!("The current directory is {}", path.expect("REASON").display());
