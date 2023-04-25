@@ -59,7 +59,7 @@ fn handle_client() -> anyhow::Result<bool> {
             //makes new path and sets that path to current dir, prints it out
             let mut filepath: Vec<&str> = cmd.split("cd").collect();
             let mut path = Path::new(filepath[1].trim());
-            env::set_current_dir(path);
+            env::set_current_dir(path)?;
             let path = env::current_dir();
             println!("The current directory is {}", path.expect("REASON").display());
         }else {
@@ -76,7 +76,7 @@ fn handle_client() -> anyhow::Result<bool> {
                 ForkResult::Child => {
                     if commands.contains(&"|"){
                         //print!("here \n");
-                        pipeline(cmd);
+                        pipeline(cmd).unwrap();
                     }else{
                         let cmd2 = externalize(cmd.as_str());
                         match execvp(cmd2[0].as_c_str(), &cmd2) {
@@ -102,39 +102,27 @@ fn pipeline(cmd: String) -> anyhow::Result<bool>  {
     for command in args.iter().skip(1).rev(){
         println!("{}", command);
 
-        let mut ls: Vec<CString> = vec![CString::new(command.to_string())?]; 
+        let mut ls: Vec<CString> = vec![CString::new(command.to_string().trim())?]; 
         //wc = next command
-        let mut wc: Vec<CString> = vec![CString::new(args.iter().next().to_owned().expect("REASON").to_string())?]; 
+        println!("{:?}", ls);
+        let mut wc: Vec<CString> = vec![CString::new(args.iter().rev().skip(1).next().to_owned().expect("REASON").trim().to_string())?]; 
+        println!("{:?}", wc);
 
+        let (wc_in, ls_out) = pipe()?;
         match unsafe {fork()}? {
-            nix::unistd::ForkResult::Parent { child } => {
-                println!("wc pid is {child}");
-                waitpid(child, None).unwrap();
-                println!("Finished!");
-            },
+            nix::unistd::ForkResult::Parent { child: _ } => {
+                close(ls_out)?;
+                dup2(wc_in, 0)?;
+                execvp(&wc[0], &wc)?;
+            }
 
             nix::unistd::ForkResult::Child => {
-                let (wc_in, ls_out) = pipe()?;
-                match unsafe {fork()}? {
-                    nix::unistd::ForkResult::Parent { child: _ } => {
-                        close(ls_out)?;
-                        dup2(wc_in, 0)?;
-                        execvp(&wc[0], &wc)?;
-                    }
-                    nix::unistd::ForkResult::Child => {
-                        close(wc_in)?;
-                        dup2(ls_out, 1)?;
-                        execvp(&ls[0], &ls)?;
-                    }
-
-                }
+                close(wc_in)?;
+                dup2(ls_out, 1)?;
+                execvp(&ls[0], &ls)?;
             }
-        }
-
+        }     
     }
-    
-    
-    
     Ok(true)
 }
 
