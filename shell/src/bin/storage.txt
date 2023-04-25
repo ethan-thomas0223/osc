@@ -166,7 +166,87 @@ Garbage Collectors
                - Add up all total time usage, when at total cap drop priority
           3. if a process consumes its time slice, it goes down 1 level in priority 
           4. Every once in a while send all processes to level 0
-     - 
 
+     - Proportional Scheduler 
+          - "Budget" availible, scheduler picks what to run based on given Budget
+          - Lottery Scheduler
+               - Servers, QEMU, Webhosting, etc. 
+               - $1/"ticket" 
+               - who gets scheduled depends on number of tickers they have 
+               - Scheduling interval 
+                    - Amount of time in which a given process will run until the next ticket is picked
+                    - Ramdomly pick a ticket, whoever owns said ticket gets the cpu/run time 
+               - To pick a ticket  
+                    - Generate random number between 1-(total num tickets)
+                    - check to see if random num is greater than largest num tickets held, 
+                    - if it is subtract and repeat process for next element in ticket holders list 
+                    - otherwise run the largest holder 
+               - Given enough time and a good random number generator 
+                    - all get the correct amount of cpu time proportional to tickets purchased 
+               - Could be used to allocate/determine storage and other resources as long as you can distribute the tickets 
+               - If there are too many tikcets bought/job requests, 
+                    - usually limited to num tickets per server
+                    - bring more hardware online 
+                    - try to maximize bang for buck in hardware usage 
+     
+     - Linux Scheduler
+          - Completely Fair Scheduler 
+          - Sched_latency 
+               - Represents a budget of time slices   
+
+     - History of Computers and OS Programming
+          - Apple
+               - 1986 realeased the Macintosh
+               - first commercial OS that had Windowing capabilities
+          - Linux 
+          - IBM
+               - Responsible for the development of hte mainframe 
+               - First high level compiler known as Fortran
+               - MicroCopmuters developed in the 1970s
+                    - Almost Purely for Hobbyist 
+                    - Altair most famously 
+                    - Late 70s IBM PC 
+               - IBM PC 
+                    - IBM outsourced the cpu to intel 
+                         - Intel 8088
+                              - Sucessor Chips 8086, 80286, 80386 (Linux), 80486
+                              - CPU architecture called x86
+                                   - ALl backwards compatible 
+                                   - Executible from 8086 could run on Pentium
+
+                    - Outsourced the OS to Microsoft  
+                         - Microsoft wanted to retain the copywrite for the OS 
+                              - MS-DOS (Microsoft Disk Operating System)
+                              - DOS ran on vga buffer, had that font 
+                              - had a command prompt (used backslash instead of forward slash)
+                         - 88-89 Windows 3.0 released with windowing capabilities 
+                              - was originally an application ran from the DOS command line
+          - Several companies figured out they could buy intel chips and MS-OS 
+               - Make thier own PCs for about a third of teh price of an IBM machine and sell it for half
+          - Windows became the brand focused around 1990
+          - 1990-1994
+               - Mac was king of consumer PC, but very expensive 
+               - Mac OS was seamless and elegane whereas MS was clunky 
+          - Windows 95
+               - released in 1995 
+               - Windows 95 on a PC clone with an Intel Pentium took over the world
+               - 90% of desktops about 
+          - 1993 
+               - first web browser made 
+               - World Wide Web popularized in 95
+               - Java realeased in 1995 as a web language 
+          - 1998 
+               - MS windows "Monopoly" on the desktop 
+               - Due to an Anti-Trust lawsuit, MS allowed users to download and run other web browsers
+               - Linux got super popular (Dual boot on cpu bc windows ran vidoegames better, linux on the other half on cpu)
+               - Linux didn't have windowing, so companies took the linux Kernel, GNU tools, and then added a windowing component
+                    - known as a linux Distribution
+                    - Android is a Linux Distribution 
+                    - This happened bc windows was getting more expensive and wasn't a great server language 
+                    - Different Distributions used different window managers
+                         - Gnome
+                         - KDE
+                    - fragmentation was bad for developement of linux as consumer os 
+                    - However, linux dominated the sever software market 
 */
 
