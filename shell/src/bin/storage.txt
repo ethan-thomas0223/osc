@@ -248,5 +248,21 @@ Garbage Collectors
                          - KDE
                     - fragmentation was bad for developement of linux as consumer os 
                     - However, linux dominated the sever software market 
+
+
+     - The Four Freedoms from the GNU Projects 
+          - 0 Freedom to use software for ANY purpose
+          - 1 Freedom to change software to meet your needs 
+          - 2 Freedom to share software 
+          - 3 Freedom to share the changes in software 
+     - GPL 
+          - GNU Public Liscense 
+          - Copyleft 
+               - "All rights reversed"
+               - Users are guarunteed the 4 freedoms 
+               - when software is changed and shared must also adhere to GPL 
+          - make it hard to make said software proprietary 
+     - Open Source Initiative 
+          - 
 */
 
