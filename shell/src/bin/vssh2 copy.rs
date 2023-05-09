@@ -77,10 +77,58 @@ fn handle_client() -> anyhow::Result<bool> {
                 ForkResult::Child => {
                     if commands.contains(&"|"){
                         //print!("here \n");
-                        match pipeline(cmd) {
+                        let mut args: Vec<&str> = cmd.split(&"|").collect();
+                        let mut cur_fd_out = 1; 
+                        let num_args = args.len()-1; 
+                        if cmd.contains(">"){
+                            let commands:Vec<&str> = args.last().expect("REASON").split(">").collect();
+                            let flags: OFlag = [OFlag::O_CREAT, OFlag::O_WRONLY, OFlag::O_TRUNC].iter().copied().collect();
+                            let mode: Mode = [Mode::S_IRUSR, Mode::S_IWUSR].iter().copied().collect();
+                            let newfd = open(commands[1].trim(), flags, mode)?;
+                            args[num_args] = commands[0];
+                            cur_fd_out = newfd;
+                        }
+                        //let ls: Vec<CString> = vec![CString::new("ls")?, CString::new("-l")?];
+                        //let wc: Vec<CString> = vec![CString::new("wc")?];
+                        
+                        for command in args.iter().skip(1).rev(){
+                            let (output, input) = pipe()?;
+                                
+                            match unsafe {fork()} {
+                                
+                                Ok(nix::unistd::ForkResult::Parent { child: _ }) => {
+                                    close(input)?;
+                                    dup2(cur_fd_out, 1)?;
+                                    dup2(output, 0)?;
+                                    let cmd2 = externalize(command);
+                                    execvp(&cmd2[0], &cmd2)?;
+                                }
+                        
+                                Ok(nix::unistd::ForkResult::Child) => {
+                                    close(output)?;
+                                    cur_fd_out = input;
+                                }
+                                Err(e) => {println!("Error: {e}");},
+                                
+                            } 
+
+                        }
+                        if cmd.contains("<") {
+
+                            let commands:Vec<&str> = cmd.split("<").collect();
+                            let cur_fd_out = open(commands[1].trim(), OFlag::O_RDONLY, Mode::empty())?;
+                            dup2(cur_fd_out, 0)?;
+                            args[0] = commands[0];
+                            
+                        }
+                        let beg = externalize(args[0]);
+                        dup2(cur_fd_out, 1)?;
+
+                        match execvp(beg[0].as_c_str(), &beg) {
                             Ok(_) => {println!("Child finished");},
                             Err(e) => {println!("Error: {e}");},
                         }
+                        
                     }else{
                         let cmd2 = externalize(cmd.as_str());
                         match execvp(cmd2[0].as_c_str(), &cmd2) {
