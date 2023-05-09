@@ -77,10 +77,7 @@ fn handle_client() -> anyhow::Result<bool> {
                 ForkResult::Child => {
                     if commands.contains(&"|"){
                         //print!("here \n");
-                        match pipeline(cmd) {
-                            Ok(_) => {println!("Child finished");},
-                            Err(e) => {println!("Error: {e}");},
-                        }
+                        pipeline(cmd).unwrap();
                     }else{
                         let cmd2 = externalize(cmd.as_str());
                         match execvp(cmd2[0].as_c_str(), &cmd2) {
@@ -98,7 +95,7 @@ fn handle_client() -> anyhow::Result<bool> {
 }
 
 
-fn pipeline(cmd: String) -> anyhow::Result<bool> {
+fn pipeline(cmd: String) -> anyhow::Result<bool>  {
     //println!("Execute ls -l | wc");
     let mut args: Vec<&str> = cmd.split(&"|").collect();
     let mut cur_fd_out = 1; 
